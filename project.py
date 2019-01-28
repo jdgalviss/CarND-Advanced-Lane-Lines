@@ -423,7 +423,8 @@ class Lines():
         xm_per_pix = 3.7/700 # meters per pixel in x dimension
         # Define y-value where we want radius of curvature
         # We'll choose the maximum y-value, corresponding to the bottom of the image
-        y_eval = np.max(ploty)-100 * ym_per_pix
+        y_eval = np.max(ploty) * ym_per_pix
+        print(y_eval)
         
         ##### Implement the calculation of R_curve (radius of curvature) #####
         curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
@@ -465,7 +466,7 @@ def horizontal_distance(left_fit,right_fit,ploty):
     center_car = (1280*xm_per_pix/2.0)
     center_road = ((x_der+x_izq)/2.0)
     position = center_car-center_road
-    print("der: " + "{:.2f}".format(x_der) + " | izq: " + "{:.2f}".format(x_izq), " | center_car: " + "{:.2f}".format(center_car),  " | center_road: " + "{:.2f}".format(center_road) )
+    #print("der: " + "{:.2f}".format(x_der) + " | izq: " + "{:.2f}".format(x_izq), " | center_car: " + "{:.2f}".format(center_car),  " | center_road: " + "{:.2f}".format(center_road) )
 
     return average_distance, std_distance, position
 
@@ -478,7 +479,8 @@ def measure_curvature_real(actual_fit, ploty):
     xm_per_pix = 3.7/700 # meters per pixel in x dimension
     # Define y-value where we want radius of curvature
     # We'll choose the maximum y-value, corresponding to the bottom of the image
-    y_eval = np.max(ploty)-100 * ym_per_pix
+    y_eval = np.max(ploty) * ym_per_pix
+    #print(y_eval)
         
     ##### Implement the calculation of R_curve (radius of curvature) #####
     curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
@@ -513,7 +515,7 @@ def advanced_process_image(img):
     actual_left_curvature = measure_curvature_real(left_fit, ploty)
     actual_right_curvature = measure_curvature_real(right_fit, ploty)
     h_distance_avg, h_distancd_std, position = horizontal_distance(left_fit,right_fit,ploty)
-    print("=============================")
+    #print("=============================")
     #make decisions based on curvature and horizontal distance
     if( (h_distance_avg>3.0) and (h_distance_avg<4.2) and (h_distancd_std<0.3) ):
         if( (abs(actual_left_curvature / lane_left.radius_of_curvature) < 2.5) or lane_left.radius_of_curvature == 0.0 ):
@@ -522,7 +524,7 @@ def advanced_process_image(img):
         else:
             lane_left.wrong_count = lane_left.wrong_count + 1
             lane_left.detected = False
-            print("crazy left curvature")
+            #print("crazy left curvature")
             print(actual_left_curvature)
         
         if( (abs(actual_right_curvature / lane_right.radius_of_curvature) < 2.5) or lane_right.radius_of_curvature == 0.0 ):
@@ -531,12 +533,12 @@ def advanced_process_image(img):
         else:
             lane_right.wrong_count = lane_right.wrong_count + 1
             lane_right.detected = False
-            print("crazy right curvature")
+            #print("crazy right curvature")
             print(actual_right_curvature)
     else:
         lane_left.wrong_count = lane_left.wrong_count + 1
         lane_right.wrong_count = lane_right.wrong_count + 1
-        print("crazy horizontal distance")
+        #print("crazy horizontal distance")
         error = True
         lane_left.detected = False
         lane_right.detected = False
@@ -563,19 +565,29 @@ def advanced_process_image(img):
 fourcc = cv2.VideoWriter_fourcc(*'MPEG')
 out = cv2.VideoWriter("out_challenge.avi", fourcc, 25.0, (1280,720))
 cap = cv2.VideoCapture('project_video.mp4')
+curvature = 0.0
+car_position = 0.0
+alpha = 0.9
 while(cap.isOpened()):
     ret, frame = cap.read()
     #get result and partial results
     color_warped, windows, binary_warped, result, left_curvature, right_curvature, h_distance_avg, h_distancd_std, left_wrong, right_wrong, error, position = advanced_process_image(frame)
     if(error):
         cv2.imwrite("error.jpg",frame)
+
+    if(curvature != 0.0):
+        curvature = (1-alpha)*((left_curvature+right_curvature)/2.0) + alpha*curvature
+        car_position = (1-alpha)*position + alpha*car_position
+    else:
+        curvature = ((left_curvature+right_curvature)/2.0)
+        car_position = position
     #add messages
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(result,"Radius of curvature: "+"{:.2f}".format((lane_right.radius_of_curvature+lane_left.radius_of_curvature)/2.0)+"(m)",(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    if(position > 0):
-        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(position))+"m right of center",(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    cv2.putText(result,"Radius of curvature: "+"{:.2f}".format(curvature)+"(m)",(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    if(car_position < 0):
+        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m right of center",(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
     else:
-        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(position))+"m left of center",(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m left of center",(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
     # cv2.putText(result,"left_curv:"+"{:.2f}".format(left_curvature),(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
     # cv2.putText(result,"right_curv:"+"{:.2f}".format(right_curvature),(20,140), font, 2.0,(255,255,255),2,cv2.LINE_AA)
     # cv2.putText(result,"car_position:"+"{:.2f}".format(position),(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
