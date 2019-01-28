@@ -85,17 +85,18 @@ def get_warped_binary_S(img):
     hls_img = cv2.cvtColor(undistorted_img, cv2.COLOR_RGB2HLS)
     S_img = hls_img[:,:,2]
     #x edges
-    S_sobel_X = abs_sobel_thresh(S_img, orient='x', thresh=(30, 100))
-    S_sobel_Y = abs_sobel_thresh(S_img, orient='y', thresh=(60, 100))
+    S_sobel_X = abs_sobel_thresh(S_img, orient='x', thresh=(10, 200))
+    S_sobel_Y = abs_sobel_thresh(S_img, orient='y', thresh=(10, 200))
     #xy edges
-    S_sobel_XY = mag_thresh(S_img, mag_thresh=(70, 100))
+    S_sobel_XY = mag_thresh(S_img, mag_thresh=(10, 200))
     #dir edges
     S_sobel_Dir = dir_threshold(S_img, thresh=(0.5, 1.3))
     #combined
     S_comb = np.zeros_like(S_img)
     S_comb[((S_sobel_X == 1) & (S_sobel_Y == 1)) | ((S_sobel_XY == 1) & (S_sobel_Dir == 1))] = 1
+    #S_comb[((S_sobel_X == 1) & (S_sobel_Y == 1))] = 1
     #Color thresh
-    S_col = color_threshold(S_img, s_thresh=(200, 255))
+    S_col = color_threshold(S_img, s_thresh=(160, 255))
     #Combine colors and gradient
     S_combined_2 = np.zeros_like(S_img)
     S_combined_2[(S_comb == 1) | (S_col == 1)] = 1
@@ -115,14 +116,15 @@ def get_warped_binary_V(img):
     V_sobel_X = abs_sobel_thresh(V_img, orient='x', thresh=(30, 100))
     V_sobel_Y = abs_sobel_thresh(V_img, orient='y', thresh=(60, 100))
     #xy edges
-    V_sobel_XY = mag_thresh(V_img, mag_thresh=(70, 100))
+    V_sobel_XY = mag_thresh(V_img, mag_thresh=(50, 100))
     #dir edges
     V_sobel_Dir = dir_threshold(V_img, thresh=(0.5, 1.3))
     #combined
     V_comb = np.zeros_like(V_img)
     V_comb[((V_sobel_X == 1) & (V_sobel_Y == 1)) | ((V_sobel_XY == 1) & (V_sobel_Dir == 1))] = 1
+    #V_comb[((V_sobel_X == 1) & (V_sobel_Y == 1))] = 1
     #Color thresh
-    V_col = color_threshold(V_img, s_thresh=(225, 255))
+    V_col = color_threshold(V_img, s_thresh=(230, 255))
     #Combine colors and gradient
     V_combined_2 = np.zeros_like(V_img)
     V_combined_2[(V_comb == 1) | (V_col == 1)] = 1
@@ -135,22 +137,22 @@ def get_warped_binary_V(img):
     return warped_binary2
 
 #=====================Find lines and calculate their curvature============
-def measure_curvature_real(left_fit,right_fit,ploty):
-    '''
-    Calculates the curvature o
-    f polynomial functions in meters.
-    '''
-    ym_per_pix = 30/600 # meters per pixel in y dimension
-    xm_per_pix = 3.7/700 # meters per pixel in x dimension
-    # Define y-value where we want radius of curvature
-    # We'll choose the maximum y-value, corresponding to the bottom of the image
-    y_eval = np.max(ploty)-100 * ym_per_pix
+# def measure_curvature_real(left_fit,right_fit,ploty):
+#     '''
+#     Calculates the curvature o
+#     f polynomial functions in meters.
+#     '''
+#     ym_per_pix = 30/600 # meters per pixel in y dimension
+#     xm_per_pix = 3.7/700 # meters per pixel in x dimension
+#     # Define y-value where we want radius of curvature
+#     # We'll choose the maximum y-value, corresponding to the bottom of the image
+#     y_eval = np.max(ploty)-100 * ym_per_pix
     
-    ##### Implement the calculation of R_curve (radius of curvature) #####
-    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
-    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+#     ##### Implement the calculation of R_curve (radius of curvature) #####
+#     left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
+#     right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
     
-    return left_curverad, right_curverad
+#     return left_curverad, right_curverad
 
 #Functions to Fit a 2nd order polynom to the binary warped image
 def find_lane_pixels(binary_warped):
@@ -169,9 +171,9 @@ def find_lane_pixels(binary_warped):
     # Choose the number of sliding windows
     nwindows = 9
     # Set the width of the windows +/- margin
-    margin = 150
+    margin = 200
     # Set minimum number of pixels found to recenter window
-    minpix = 50
+    minpix = 20
 
     # Set height of windows - based on nwindows above and image shape
     window_height = np.int(binary_warped.shape[0]//nwindows)
@@ -293,7 +295,7 @@ def search_around_poly(binary_warped, left_fit, right_fit, drawEnable = False):
     # HYPERPARAMETER
     # Choose the width of the margin around the previous polynomial to search
     # The quiz grader expects 100 here, but feel free to tune on your own!
-    margin = 100
+    margin = 130
 
     # Grab activated pixels
     nonzero = binary_warped.nonzero()
@@ -377,8 +379,8 @@ def draw_area(img, left_fit, right_fit, ploty):
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
     newwarp = cv2.warpPerspective(color_warp, M_inv, (img.shape[1], img.shape[0])) 
     # Combine the result with the original image
-    result = cv2.addWeighted(undist, 1, newwarp, 0.5, 0)
-    return result
+    result = cv2.addWeighted(undist, 1, newwarp, 0.8, 0)
+    return color_warp, result
 
 #=====================================================================================
 #=========== Define a class to receive the characteristics of each line detection ====
@@ -392,7 +394,8 @@ class Lines():
         #average x values of the fitted line over the last n iterations
         self.bestx = None     
         #polynomial coefficients averaged over the last n iterations
-        self.best_fit = np.array([0,0,0], dtype='int')   
+        self.best_fit = np.array([0,0,0], dtype='int')  
+        self.last_best_fit = np.array([0,0,0], dtype='int')   
         #polynomial coefficients for the most recent fit
         self.current_fit = [np.array([False])]  
         #radius of curvature of the line in some units
@@ -409,55 +412,209 @@ class Lines():
         ##=============
         self.filter_window = None
         self.measures = np.empty((0,3), int)
-    def add_measure(self, measure, curvature):
+        self.wrong_count = 0
+    
+    def measure_curvature_real(self, actual_fit, ploty):
+        '''
+        Calculates the curvature o
+        f polynomial functions in meters.
+        '''
+        ym_per_pix = 30/700 # meters per pixel in y dimension
+        xm_per_pix = 3.7/700 # meters per pixel in x dimension
+        # Define y-value where we want radius of curvature
+        # We'll choose the maximum y-value, corresponding to the bottom of the image
+        y_eval = np.max(ploty)-100 * ym_per_pix
+        
+        ##### Implement the calculation of R_curve (radius of curvature) #####
+        curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
+        return curvature
+
+    def add_measure(self, measure, ploty):
+
+        #Calculate radius of curvature
+    
         if(self.radius_of_curvature == 0):
-            self.radius_of_curvature = curvature
+            actual_curvature = self.measure_curvature_real(measure, ploty)
+            self.radius_of_curvature = actual_curvature
             self.measures = np.append(self.measures, np.array([measure]), axis=0)
         else:
-            if(abs(curvature - self.radius_of_curvature) > 400000):
-                print(str(curvature) + " and " + str(self.radius_of_curvature))
-            else:
-                self.measures = np.append(self.measures, np.array([measure]), axis=0)
-                #calculate curvature, x distance, parallelism, check parabpa formula: shift in x and y and curvature
-                if self.measures.shape[0] > 10:
-                    self.measures = np.delete(self.measures, (0), axis=0)
+            self.measures = np.append(self.measures, np.array([measure]), axis=0)
+            #calculate curvature, x distance, parallelism, check parabpa formula: shift in x and y and curvature
+            if self.measures.shape[0] > 6:
+                self.measures = np.delete(self.measures, (0), axis=0)
         self.best_fit = np.average(self.measures, axis=0)
+        if(self.best_fit[0] == 0):
+            self.radius_of_curvature = self.measure_curvature_real(self.last_best_fit, ploty)
+        else:
+            self.radius_of_curvature = self.measure_curvature_real(self.best_fit, ploty)
+        #self.best_fit = measure
 
 lane_left = Lines()
 lane_right = Lines()
 #15s - 21-24 - 39-40
+
+def horizontal_distance(left_fit,right_fit,ploty):
+    xm_per_pix = 3.7/700
+    left_fitx = (left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]) * xm_per_pix
+    right_fitx = (right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]) * xm_per_pix
+    average_distance = np.average(right_fitx - left_fitx)
+    std_distance = np.std(right_fitx - left_fitx)
+    
+    x_der = right_fitx[0]
+    x_izq = left_fitx[0]
+    center_car = (1280*xm_per_pix/2.0)
+    center_road = ((x_der+x_izq)/2.0)
+    position = center_car-center_road
+    print("der: " + "{:.2f}".format(x_der) + " | izq: " + "{:.2f}".format(x_izq), " | center_car: " + "{:.2f}".format(center_car),  " | center_road: " + "{:.2f}".format(center_road) )
+
+    return average_distance, std_distance, position
+
+def measure_curvature_real(actual_fit, ploty):
+    '''
+    Calculates the curvature o
+    f polynomial functions in meters.
+    '''
+    ym_per_pix = 30/700 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    # Define y-value where we want radius of curvature
+    # We'll choose the maximum y-value, corresponding to the bottom of the image
+    y_eval = np.max(ploty)-100 * ym_per_pix
+        
+    ##### Implement the calculation of R_curve (radius of curvature) #####
+    curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
+    return curvature
+
 def advanced_process_image(img):
     global lane_left
     global lane_right
-    binary_warped = get_warped_binary_V(img)
-    
+    error = False
+
+    if(lane_right.wrong_count >= 3):
+        lane_right.lasst_best_fit = lane_right.best_fit
+        lane_right.best_fit = np.array([0,0,0], dtype='int')
+        lane_right.radius_of_curvature = 0.0 
+        lane_right.measures = np.empty((0,3), int)
+
+    if(lane_left.wrong_count >= 5):
+        lane_left.lasst_best_fit = lane_right.best_fit
+        lane_left.best_fit = np.array([0,0,0], dtype='int')
+        lane_left.radius_of_curvature = 0.0 
+        lane_left.measures = np.empty((0,3), int)
+
+    binary_warped = get_warped_binary_S(img)
+
     if(lane_left.detected and lane_right.detected):
         out, left_fit, right_fit, ploty = search_around_poly(binary_warped, lane_left.best_fit, lane_right.best_fit)
     else:
         out, left_fit, right_fit, ploty = fit_polynomial(binary_warped)
-        #lane_left.detected = True
-        #lane_right.detected = True
-    left_curverad, right_curverad = measure_curvature_real(left_fit,right_fit,ploty)
-    lane_left.add_measure(left_fit, left_curverad)
-    lane_right.add_measure(right_fit, right_curverad)
-    lane_left.radius_of_curvature, lane_right.radius_of_curvature = measure_curvature_real(lane_left.best_fit,lane_right.best_fit,ploty)
+        lane_left.detected = True
+        lane_right.detected = True
+    #measure horizontal distances and curvatures
+    actual_left_curvature = measure_curvature_real(left_fit, ploty)
+    actual_right_curvature = measure_curvature_real(right_fit, ploty)
+    h_distance_avg, h_distancd_std, position = horizontal_distance(left_fit,right_fit,ploty)
+    print("=============================")
+    #make decisions based on curvature and horizontal distance
+    if( (h_distance_avg>3.0) and (h_distance_avg<4.2) and (h_distancd_std<0.3) ):
+        if( (abs(actual_left_curvature / lane_left.radius_of_curvature) < 2.5) or lane_left.radius_of_curvature == 0.0 ):
+            lane_left.add_measure(left_fit, ploty)
+            lane_left.wrong_count = 0
+        else:
+            lane_left.wrong_count = lane_left.wrong_count + 1
+            lane_left.detected = False
+            print("crazy left curvature")
+            print(actual_left_curvature)
+        
+        if( (abs(actual_right_curvature / lane_right.radius_of_curvature) < 2.5) or lane_right.radius_of_curvature == 0.0 ):
+            lane_right.add_measure(right_fit, ploty)
+            lane_right.wrong_count = 0
+        else:
+            lane_right.wrong_count = lane_right.wrong_count + 1
+            lane_right.detected = False
+            print("crazy right curvature")
+            print(actual_right_curvature)
+    else:
+        lane_left.wrong_count = lane_left.wrong_count + 1
+        lane_right.wrong_count = lane_right.wrong_count + 1
+        print("crazy horizontal distance")
+        error = True
+        lane_left.detected = False
+        lane_right.detected = False
+    
+        
+    
     #print(lane_left.best_fit)
     #print(ploty)
-    result = draw_area(img, lane_left.best_fit, lane_right.best_fit, ploty)
+    if(lane_left.best_fit[0]== 0):
+        if(lane_right.best_fit[0]== 0):
+            color_warped, result = draw_area(img, lane_left.last_best_fit, lane_right.last_best_fit, ploty)
+        else:
+            color_warped, result = draw_area(img, lane_left.last_best_fit, lane_right.best_fit, ploty)
+    else:
+        if(lane_right.best_fit[0]== 0):
+            color_warped, result = draw_area(img, lane_left.best_fit, lane_right.last_best_fit, ploty)
+        else:
+            color_warped, result = draw_area(img, lane_left.best_fit, lane_right.best_fit, ploty)
+
     #return cv2.cvtColor(binary_warped*255, cv2.COLOR_GRAY2BGR)
-    return result
+    message = "left_curv="+str(lane_left.radius_of_curvature)+"\n right curv="+str(lane_right.radius_of_curvature)+"\n h_dist="+str(h_distance_avg)+"\n std_dist="+str(h_distancd_std)
+    return color_warped, out, binary_warped, result, lane_left.radius_of_curvature, lane_right.radius_of_curvature, h_distance_avg, h_distancd_std, lane_left.wrong_count, lane_right.wrong_count, error, position
 
-
+fourcc = cv2.VideoWriter_fourcc(*'MPEG')
+out = cv2.VideoWriter("out_challenge.avi", fourcc, 25.0, (1280,720))
 cap = cv2.VideoCapture('project_video.mp4')
 while(cap.isOpened()):
     ret, frame = cap.read()
+    #get result and partial results
+    color_warped, windows, binary_warped, result, left_curvature, right_curvature, h_distance_avg, h_distancd_std, left_wrong, right_wrong, error, position = advanced_process_image(frame)
+    if(error):
+        cv2.imwrite("error.jpg",frame)
+    #add messages
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(result,"Radius of curvature: "+"{:.2f}".format((lane_right.radius_of_curvature+lane_left.radius_of_curvature)/2.0)+"(m)",(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    if(position > 0):
+        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(position))+"m right of center",(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    else:
+        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(position))+"m left of center",(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"left_curv:"+"{:.2f}".format(left_curvature),(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"right_curv:"+"{:.2f}".format(right_curvature),(20,140), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"car_position:"+"{:.2f}".format(position),(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"h_dist:"+"{:.2f}".format(h_distance_avg),(20,280), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"std_dist:"+"{:.2f}".format(h_distancd_std),(20,350), font, 2.0,(255,255,255),2,cv2.LINE_AA)
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # cv2.putText(result,"left_wrong:"+str(left_wrong),(20,420), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"right_wrong:"+str(right_wrong),(20,490), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    out.write(result)
+    #resize all images
+    windows = cv2.resize(windows, (0, 0), None, .47, .47)
+    color_warped = cv2.resize(color_warped, (0, 0), None, .47, .47)
+    binary_warped = cv2.resize(255*binary_warped, (0, 0), None, .47, .47)
+    result = cv2.resize(result, (0, 0), None, .47, .47)
 
-    cv2.imshow('frame',frame)
-    cv2.imshow('frame2',advanced_process_image(frame))
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Make the grey scale image have three channels
+    binary_warped = cv2.cvtColor(binary_warped, cv2.COLOR_GRAY2BGR)
+
+    # Join images
+    line1 = np.hstack((windows, binary_warped))
+    line2 = np.hstack((color_warped, result))
+    images = np.vstack((line1,line2))
+    
+
+    
+
+    #pause reproduction
+    key = cv2.waitKey(1) & 0xff
+    if key == ord('q'):
         break
+    else:
+        if key == ord('p'):
+            while True:
+                key2 = cv2.waitKey(1) or 0xff
+                cv2.imshow('frame', images)
+                if key2 == ord('p'):
+                    break
+        cv2.imshow('frame',images)
+
 
 cap.release()
 cv2.destroyAllWindows()
