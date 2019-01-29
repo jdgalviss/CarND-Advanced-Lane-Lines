@@ -607,7 +607,7 @@ def advanced_process_image(img):
     locked = (lane_left.best_fit[0] != 0) or (lane_right.best_fit[0] != 0)
 
     # If lanes are not locked yet, use the last lane that made sense
-    locked = not error
+    #locked = not error
 
     if(lane_left.best_fit[0]== 0):
         if(lane_right.best_fit[0]== 0):
