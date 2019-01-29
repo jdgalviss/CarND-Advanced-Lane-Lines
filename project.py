@@ -87,9 +87,9 @@ def get_warped_binary_V(img):
     V_img_blur = cv2.GaussianBlur(V_img, (5, 5), 0)
     #x edges
     V_sobel_X = abs_sobel_thresh(V_img, orient='x', thresh=(30, 100))
-    V_sobel_Y = abs_sobel_thresh(V_img, orient='y', thresh=(60, 100))
+    V_sobel_Y = abs_sobel_thresh(V_img, orient='y', thresh=(30, 100))
     #xy edges
-    V_sobel_XY = mag_thresh(V_img, mag_thresh=(50, 100))
+    V_sobel_XY = mag_thresh(V_img, mag_thresh=(30, 100))
     #dir edges
     V_sobel_Dir = dir_threshold(V_img, thresh=(0.5, 1.3))
     #combined
@@ -97,7 +97,7 @@ def get_warped_binary_V(img):
     V_comb[((V_sobel_X == 1) & (V_sobel_Y == 1)) | ((V_sobel_XY == 1) & (V_sobel_Dir == 1))] = 1
     #V_comb[((V_sobel_X == 1) & (V_sobel_Y == 1))] = 1
     #Color thresh
-    V_col = color_threshold(V_img, s_thresh=(230, 255))
+    V_col = color_threshold(V_img, s_thresh=(215, 255))
     #Combine colors and gradient
     V_combined_2 = np.zeros_like(V_img)
     V_combined_2[(V_comb == 1) | (V_col == 1)] = 1
@@ -105,8 +105,8 @@ def get_warped_binary_V(img):
     #Perspective transform
     warped_binary2 = cv2.warpPerspective(V_combined_2, M, img_size, flags=cv2.INTER_LINEAR)
     #perform openning morfological operation
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-    opening = cv2.morphologyEx(warped_binary2, cv2.MORPH_OPEN, kernel) 
+    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+    #opening = cv2.morphologyEx(warped_binary2, cv2.MORPH_OPEN, kernel) 
     return warped_binary2
 
 
@@ -118,58 +118,67 @@ def get_warped_binary_S(img):
     hls_img = cv2.cvtColor(undistorted_img, cv2.COLOR_RGB2HLS)
     S_img = hls_img[:,:,2]
     #x edges
-    S_sobel_X = abs_sobel_thresh(S_img, orient='x', thresh=(7, 200))
-    S_sobel_Y = abs_sobel_thresh(S_img, orient='y', thresh=(7, 200))
+    S_sobel_X = abs_sobel_thresh(S_img, orient='x', thresh=(10, 100))
+    S_sobel_Y = abs_sobel_thresh(S_img, orient='y', thresh=(10, 100))
     #xy edges
     S_sobel_XY = mag_thresh(S_img, mag_thresh=(10, 200))
     #dir edges
-    S_sobel_Dir = dir_threshold(S_img, thresh=(0.4, 1.4))
+    S_sobel_Dir = dir_threshold(S_img, thresh=(0.5, 1.3))
     #combined
     S_comb = np.zeros_like(S_img)
     S_comb[((S_sobel_X == 1) & (S_sobel_Y == 1)) | ((S_sobel_XY == 1) & (S_sobel_Dir == 1))] = 1
     #S_comb[((S_sobel_X == 1) & (S_sobel_Y == 1))] = 1
     #Color thresh
-    S_col = color_threshold(S_img, s_thresh=(180, 255))
+    S_col = color_threshold(S_img, s_thresh=(170, 255))
     #Combine colors and gradient
     S_combined_2 = np.zeros_like(S_img)
     S_combined_2[(S_comb == 1) | (S_col == 1)] = 1
+    S_combined2 = S_comb
     V_combined_2 = get_warped_binary_V(img)
     #Perspective transform
     warped_binary2 = cv2.warpPerspective(S_combined_2, M, img_size, flags=cv2.INTER_LINEAR)
     V_combined_2 = get_warped_binary_V(img)
-    return warped_binary2 + V_combined_2
+    out = np.zeros_like(S_img)
+    out[(warped_binary2 == 1) | (V_combined_2 == 1)] = 1
+    #out = warped_binary2 + V_combined_2
+    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+    #opening = cv2.morphologyEx(out, cv2.MORPH_OPEN, kernel) 
+    return warped_binary2
 
-def get_warped_binary_V(img):
+def get_warped_binary_R(img):
     img_size = (img.shape[1], img.shape[0])
     #undistort image
     undistorted_img = cv2.undistort(img, mtx, dist, None, mtx)
     #change to hls color space
-    hsv_img = cv2.cvtColor(undistorted_img, cv2.COLOR_RGB2HSV)
-    V_img = hsv_img[:,:,2]
-    V_img_blur = cv2.GaussianBlur(V_img, (5, 5), 0)
+    #hls_img = cv2.cvtColor(undistorted_img, cv2.COLOR_RGB2HLS)
+    S_img = img[:,:,0]
     #x edges
-    V_sobel_X = abs_sobel_thresh(V_img, orient='x', thresh=(30, 100))
-    V_sobel_Y = abs_sobel_thresh(V_img, orient='y', thresh=(60, 100))
+    S_sobel_X = abs_sobel_thresh(S_img, orient='x', thresh=(20, 100))
+    S_sobel_Y = abs_sobel_thresh(S_img, orient='y', thresh=(20, 100))
     #xy edges
-    V_sobel_XY = mag_thresh(V_img, mag_thresh=(50, 100))
+    S_sobel_XY = mag_thresh(S_img, mag_thresh=(15, 200))
     #dir edges
-    V_sobel_Dir = dir_threshold(V_img, thresh=(0.5, 1.3))
+    S_sobel_Dir = dir_threshold(S_img, thresh=(0.5, 1.3))
     #combined
-    V_comb = np.zeros_like(V_img)
-    V_comb[((V_sobel_X == 1) & (V_sobel_Y == 1)) | ((V_sobel_XY == 1) & (V_sobel_Dir == 1))] = 1
-    #V_comb[((V_sobel_X == 1) & (V_sobel_Y == 1))] = 1
+    S_comb = np.zeros_like(S_img)
+    S_comb[((S_sobel_X == 1) & (S_sobel_Y == 1)) | ((S_sobel_XY == 1) & (S_sobel_Dir == 1))] = 1
+    #S_comb[((S_sobel_X == 1) & (S_sobel_Y == 1))] = 1
     #Color thresh
-    V_col = color_threshold(V_img, s_thresh=(230, 255))
+    S_col = color_threshold(S_img, s_thresh=(220, 255))
     #Combine colors and gradient
-    V_combined_2 = np.zeros_like(V_img)
-    V_combined_2[(V_comb == 1) | (V_col == 1)] = 1
-       
+    S_combined_2 = np.zeros_like(S_img)
+    S_combined_2[(S_comb == 1) | (S_col == 1)] = 1
+    S_combined2 = S_comb
+    V_combined_2 = get_warped_binary_V(img)
     #Perspective transform
-    warped_binary2 = cv2.warpPerspective(V_combined_2, M, img_size, flags=cv2.INTER_LINEAR)
-    #perform openning morfological operation
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-    opening = cv2.morphologyEx(warped_binary2, cv2.MORPH_OPEN, kernel) 
-    return warped_binary2
+    warped_binary2 = cv2.warpPerspective(S_combined_2, M, img_size, flags=cv2.INTER_LINEAR)
+    V_combined_2 = get_warped_binary_V(img)
+    out = np.zeros_like(S_img)
+    out[(warped_binary2 == 1) | (V_combined_2 == 1)] = 1
+    #out = warped_binary2 + V_combined_2
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(7,7))
+    opening = cv2.morphologyEx(out, cv2.MORPH_OPEN, kernel) 
+    return opening
 
 #=====================Find lines and calculate their curvature============
 # def measure_curvature_real(left_fit,right_fit,ploty):
@@ -204,11 +213,11 @@ def find_lane_pixels(binary_warped):
 
     # HYPERPARAMETERS
     # Choose the number of sliding windows
-    nwindows = 9
+    nwindows = 15
     # Set the width of the windows +/- margin
-    margin = 200
+    margin = 150
     # Set minimum number of pixels found to recenter window
-    minpix = 20
+    minpix = 500
 
     # Set height of windows - based on nwindows above and image shape
     window_height = np.int(binary_warped.shape[0]//nwindows)
@@ -330,7 +339,7 @@ def search_around_poly(binary_warped, left_fit, right_fit, drawEnable = False):
     # HYPERPARAMETER
     # Choose the width of the margin around the previous polynomial to search
     # The quiz grader expects 100 here, but feel free to tune on your own!
-    margin = 130
+    margin = 60
 
     # Grab activated pixels
     nonzero = binary_warped.nonzero()
@@ -390,6 +399,7 @@ def search_around_poly(binary_warped, left_fit, right_fit, drawEnable = False):
     return result, left_fit, right_fit, ploty
 
 def draw_area(img, left_fit, right_fit, ploty, locked):
+
     undist = cv2.undistort(img, mtx, dist, None, mtx)
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
@@ -462,11 +472,11 @@ class Lines():
         # Define y-value where we want radius of curvature
         # We'll choose the maximum y-value, corresponding to the bottom of the image
         y_eval = np.max(ploty) * ym_per_pix
-        print(y_eval)
+        #print(y_eval)
         
         ##### Implement the calculation of R_curve (radius of curvature) #####
         curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
-        return curvature
+        return curvature * actual_fit[0]/abs(actual_fit[0])
 
     def add_measure(self, measure, ploty):
 
@@ -479,7 +489,7 @@ class Lines():
         else:
             self.measures = np.append(self.measures, np.array([measure]), axis=0)
             #calculate curvature, x distance, parallelism, check parabpa formula: shift in x and y and curvature
-            if self.measures.shape[0] > 5:
+            if self.measures.shape[0] > 4:
                 self.measures = np.delete(self.measures, (0), axis=0)
         self.best_fit = np.average(self.measures, axis=0)
         if(self.best_fit[0] == 0):
@@ -521,10 +531,10 @@ def measure_curvature_real(actual_fit, ploty):
     # We'll choose the maximum y-value, corresponding to the bottom of the image
     y_eval = np.max(ploty) * ym_per_pix
     #print(y_eval)
-        
+ 
     ##### Implement the calculation of R_curve (radius of curvature) #####
     curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
-    return curvature
+    return curvature * actual_fit[0]/abs(actual_fit[0])
 
 def advanced_process_image(img):
     global lane_left
@@ -532,24 +542,29 @@ def advanced_process_image(img):
     global curvature
     global car_position
     alpha = 0.9  #exponential filter parameter
-
+    error = False
+    print("==================================")
     # If there is more than n unlocked lines, restart average best fit and curvature
-    if(lane_right.wrong_count >= 3):
+    if(lane_right.wrong_count >= 2):
+        print("right:" + str(lane_right.best_fit))
         if(lane_right.best_fit[0] != 0):
             lane_right.last_best_fit = lane_right.best_fit
         lane_right.best_fit = np.array([0,0,0], dtype='int')
         lane_right.radius_of_curvature = 0.0 
         lane_right.measures = np.empty((0,3), int)
+        lane_right.detected = False
 
-    if(lane_left.wrong_count >= 3):
+    if(lane_left.wrong_count >= 2):
+        print("left"+str(lane_left.best_fit))
         if(lane_left.best_fit[0] != 0):
-            lane_left.last_best_fit = lane_right.best_fit
+            lane_left.last_best_fit = lane_left.best_fit
         lane_left.best_fit = np.array([0,0,0], dtype='int')
         lane_left.radius_of_curvature = 0.0 
         lane_left.measures = np.empty((0,3), int)
+        lane_left.detected = False
 
     # Get binary warped image
-    binary_warped = get_warped_binary_S(img)
+    binary_warped = get_warped_binary_R(img)
 
     # Detect lines using windows or searching around previous line, depending on the quality of last line detected    
     if(lane_left.detected and lane_right.detected):
@@ -565,32 +580,35 @@ def advanced_process_image(img):
     h_distance_avg, h_distancd_std, position = horizontal_distance(left_fit,right_fit,ploty)
     
     # Based on curvatures and horizontal distance, decide if new detections are okay or not
-    if( (h_distance_avg>3.0) and (h_distance_avg<4.2) and (h_distancd_std<0.17) ): # Check if horizontal distance between lanes makes sense
-        if( (abs(actual_left_curvature / lane_left.radius_of_curvature) < 1.7) or lane_left.radius_of_curvature == 0.0 ):  #Big difference of curvature
+    if( ((h_distance_avg>3.0) and (h_distance_avg<4.4) and (h_distancd_std<0.23)) and ((actual_left_curvature/actual_right_curvature > 0) or (abs(actual_left_curvature) > 5000 or abs(actual_right_curvature) > 5000)) ): # Check if horizontal distance between lanes makes sense
+        if( (abs(actual_left_curvature / lane_left.radius_of_curvature) < 3.0) or lane_left.radius_of_curvature == 0.0 ):  #Big difference of curvature
             lane_left.add_measure(left_fit, ploty)
             lane_left.wrong_count = 0
         else:
             lane_left.wrong_count = lane_left.wrong_count + 1
-            lane_left.detected = False
-            print(actual_left_curvature)
+            #lane_left.detected = False
+            print("left curv:"+str(actual_left_curvature))
         
-        if( (abs(actual_right_curvature / lane_right.radius_of_curvature) < 1.7) or lane_right.radius_of_curvature == 0.0 ):  #Big difference of curvature
+        if( (abs(actual_right_curvature / lane_right.radius_of_curvature) < 3.0) or lane_right.radius_of_curvature == 0.0):  #Big difference of curvature
             lane_right.add_measure(right_fit, ploty)
             lane_right.wrong_count = 0
         else:
             lane_right.wrong_count = lane_right.wrong_count + 1
-            lane_right.detected = False
-            print(actual_right_curvature)
+            #lane_right.detected = False
+            print("right_curv:"+str(actual_right_curvature))
     else:
         lane_left.wrong_count = lane_left.wrong_count + 1
         lane_right.wrong_count = lane_right.wrong_count + 1
-        lane_left.detected = False
-        lane_right.detected = False
+        error = True
+        #lane_left.detected = False
+        #lane_right.detected = False
     
     # Checked if currently lanes are locked
     locked = (lane_left.best_fit[0] != 0) or (lane_right.best_fit[0] != 0)
 
     # If lanes are not locked yet, use the last lane that made sense
+    locked = not error
+
     if(lane_left.best_fit[0]== 0):
         if(lane_right.best_fit[0]== 0):
             color_warped, result = draw_area(img, lane_left.last_best_fit, lane_right.last_best_fit, ploty, locked)
@@ -612,38 +630,38 @@ def advanced_process_image(img):
     
     # Add messages to result
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(result,"Radius of curvature: "+"{:.2f}".format(curvature)+"(m)",(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    cv2.putText(result,"Radius of curvature: "+"{:.2f}".format(curvature)+"(m)",(20,70), font, 1.5,(255,255,255),2,cv2.LINE_AA)
     if(car_position < 0):
-        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m right of center",(20,170), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m right of center",(20,150), font, 1.5,(255,255,255),2,cv2.LINE_AA)
     else:
-        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m left of center",(20,170), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    # if(locked):
-    #     cv2.putText(result,"Target locked",(20,270), font, 2.0,(0,255,0),4,cv2.LINE_AA)
-    # else:
-    #     cv2.putText(result,"Target unlocked",(20,270), font, 2.0,(0,0,255),4,cv2.LINE_AA)
-    # cv2.putText(result,"left_curv:"+"{:.2f}".format(lane_left.radius_of_curvature),(20,70), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    # cv2.putText(result,"right_curv:"+"{:.2f}".format(lane_right.radius_of_curvature),(20,140), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    # cv2.putText(result,"car_position:"+"{:.2f}".format(car_position),(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    cv2.putText(result,"h_dist:"+"{:.2f}".format(h_distance_avg),(20,280), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    cv2.putText(result,"std_dist:"+"{:.2f}".format(h_distancd_std),(20,350), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m left of center",(20,150), font, 1.5,(255,255,255),2,cv2.LINE_AA)
+    if(locked):
+        cv2.putText(result,"Target locked",(20,270), font, 2.0,(0,255,0),4,cv2.LINE_AA)
+    else:
+        cv2.putText(result,"Target lost",(20,270), font, 2.0,(0,0,255),4,cv2.LINE_AA)
+    # cv2.putText(result,"left_curv:"+"{:.2f}".format(actual_left_curvature),(20,200), font, 1.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"right_curv:"+"{:.2f}".format(actual_right_curvature),(20,245), font, 1.0,(255,255,255),2,cv2.LINE_AA)
+    # # cv2.putText(result,"car_position:"+"{:.2f}".format(car_position),(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"h_dist:"+"{:.2f}".format(h_distance_avg),(20,280), font, 1.5,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"std_dist:"+"{:.2f}".format(h_distancd_std),(20,350), font, 1.5,(255,255,255),2,cv2.LINE_AA)
 
-    cv2.putText(result,"left_wrong:"+str(lane_left.wrong_count),(20,420), font, 2.0,(255,255,255),2,cv2.LINE_AA)
-    cv2.putText(result,"right_wrong:"+str(lane_right.wrong_count),(20,490), font, 2.0,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"left_wrong:"+str(lane_left.wrong_count),(20,420), font, 1.5,(255,255,255),2,cv2.LINE_AA)
+    # cv2.putText(result,"right_wrong:"+str(lane_right.wrong_count),(20,490), font, 1.5,(255,255,255),2,cv2.LINE_AA)
 
-    return color_warped, out, binary_warped, result
+    return color_warped, out, binary_warped, result, error
 
 
 ##==========================Evaluate Pipeline on project video========================##
 fourcc = cv2.VideoWriter_fourcc(*'MPEG')
-out = cv2.VideoWriter("out_challenge.avi", fourcc, 25.0, (1280,720))
+out = cv2.VideoWriter("out.avi", fourcc, 25.0, (1280,720))
 cap = cv2.VideoCapture('project_video.mp4')
 
 while(cap.isOpened()):
     ret, frame = cap.read()
     #get result and partial results
-    color_warped, windows, binary_warped, result = advanced_process_image(frame)
-    #if(error):
-    #    cv2.imwrite("error.jpg",frame)
+    color_warped, windows, binary_warped, result, error = advanced_process_image(frame)
+    if(error):
+        cv2.imwrite("error.jpg",frame)
 
     
     
