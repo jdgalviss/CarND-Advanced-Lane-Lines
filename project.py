@@ -667,18 +667,20 @@ while(cap.isOpened()):
     
     out.write(result)
     #resize all images
-    windows = cv2.resize(windows, (0, 0), None, .47, .47)
-    color_warped = cv2.resize(color_warped, (0, 0), None, .47, .47)
+    windows = cv2.resize(windows, (0, 0), None, .3, .3)
+    color_warped = cv2.resize(color_warped, (0, 0), None, .3, .3)
     binary_warped = cv2.resize(255*binary_warped, (0, 0), None, .47, .47)
-    result = cv2.resize(result, (0, 0), None, .47, .47)
+    #result = cv2.resize(result, (0, 0), None, .47, .47)
+    x_offset=y_offset=50
+    result[5:5+color_warped.shape[0], 890:890+color_warped.shape[1]] = color_warped
+    result[230:230+windows.shape[0], 890:890+windows.shape[1]] = windows
+    # # Make the grey scale image have three channels
+    # binary_warped = cv2.cvtColor(binary_warped, cv2.COLOR_GRAY2BGR)
 
-    # Make the grey scale image have three channels
-    binary_warped = cv2.cvtColor(binary_warped, cv2.COLOR_GRAY2BGR)
-
-    # Join images
-    line1 = np.hstack((windows, binary_warped))
-    line2 = np.hstack((color_warped, result))
-    images = np.vstack((line1,line2))
+    # # Join images
+    # line1 = np.hstack((windows, binary_warped))
+    # line2 = np.hstack((color_warped, result))
+    # images = np.vstack((line1,line2))
     
 
     
@@ -691,10 +693,10 @@ while(cap.isOpened()):
         if key == ord('p'):
             while True:
                 key2 = cv2.waitKey(1) or 0xff
-                cv2.imshow('frame', images)
+                cv2.imshow('frame', result)
                 if key2 == ord('p'):
                     break
-        cv2.imshow('frame',images)
+        cv2.imshow('frame',result)
 
 
 cap.release()
