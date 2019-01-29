@@ -622,10 +622,10 @@ def advanced_process_image(img):
 
     # Calculate total curvature
     if(curvature != 0.0):
-        curvature = (1-alpha)*((lane_left.radius_of_curvature+lane_right.radius_of_curvature)/2.0) + alpha*curvature
+        curvature = (1-alpha)*((abs(lane_left.radius_of_curvature)+abs(lane_right.radius_of_curvature))/2.0) + alpha*curvature
         car_position = (1-alpha)*position + alpha*car_position
     else:
-        curvature = ((lane_left.radius_of_curvature+lane_right.radius_of_curvature)/2.0)
+        curvature = ((abs(lane_left.radius_of_curvature)+abs(lane_right.radius_of_curvature))/2.0)
         car_position = position
     
     # Add messages to result
