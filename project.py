@@ -489,7 +489,7 @@ class Lines():
         else:
             self.measures = np.append(self.measures, np.array([measure]), axis=0)
             #calculate curvature, x distance, parallelism, check parabpa formula: shift in x and y and curvature
-            if self.measures.shape[0] > 4:
+            if self.measures.shape[0] > 8:
                 self.measures = np.delete(self.measures, (0), axis=0)
         self.best_fit = np.average(self.measures, axis=0)
         if(self.best_fit[0] == 0):
@@ -665,7 +665,7 @@ while(cap.isOpened()):
 
     
     
-    out.write(result)
+    
     #resize all images
     windows = cv2.resize(windows, (0, 0), None, .3, .3)
     color_warped = cv2.resize(color_warped, (0, 0), None, .3, .3)
@@ -676,7 +676,7 @@ while(cap.isOpened()):
     result[230:230+windows.shape[0], 890:890+windows.shape[1]] = windows
     # # Make the grey scale image have three channels
     # binary_warped = cv2.cvtColor(binary_warped, cv2.COLOR_GRAY2BGR)
-
+    out.write(result)
     # # Join images
     # line1 = np.hstack((windows, binary_warped))
     # line2 = np.hstack((color_warped, result))
