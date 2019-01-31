@@ -30,7 +30,7 @@ The goals / steps of this project are the following:
 [image10]: ./output_images/10_mixed.png "Binary_Channels"
 [image11]: ./output_images/11_warped.png "Binary_Warped_Channels"
 [image12]: ./output_images/12_binary_warped.jpg "Binary_Warped_R_V"
-[image13]: ./output_images/13_binnary_warped_oppened.jpg "Openning"
+[image13]: ./output_images/13_binary_warped_oppened.jpg "Openning"
 [image14]: ./output_images/14_windows.jpg "Windows"
 [image15]: ./output_images/15_color_warped.jpg "Color_Warped"
 [image16]: ./output_images/16_result_windows.jpg "Windows_Result"
@@ -115,10 +115,10 @@ To use dome of the noise produced by shadows I decided to use the morphological 
 #### 4. Lane-line identification
 
 The functions used to fit a 2nd order polynomial are in file `/project.py` betwwen lines 178 to 408. For the first image and in cases where the track is lost (determined by a sanity check) I used the a "windows" method:
-![alt text][image13]
+![alt text][image14]
 
 When the track is locked, it is better to simply detect lane lines around the previous polynomial:
-![alt text][image14]
+![alt text][image15]
 
 #### 5. Calculating curvature
 
@@ -143,17 +143,45 @@ def measure_curvature_real(actual_fit, ploty):
 
 #### 6. Sanity check
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+In order to decide wether a detection should be taken into account I decided to check 3 basic things
 
-![alt text][image6]
+1. Actual curvature should be similar to the curvature on the previous frame
+2. Left and right line curves should at least have the same direction sign (second derivative), unless the lines are almost straight (high curvatures)
+3. Lines should be relatively paralel. Here I measured horizontal distance average (it should be around 3.7m) and standard deviation in the following function:
+
+```python
+#====Function to measure horizontal position's average and standard deviation====#
+#==========between lines. The function also measures the car's position==========#
+def horizontal_distance(left_fit,right_fit,ploty):
+    xm_per_pix = 3.7/700
+    left_fitx = (left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]) * xm_per_pix
+    right_fitx = (right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]) * xm_per_pix
+    average_distance = np.average(right_fitx - left_fitx)
+    std_distance = np.std(right_fitx - left_fitx)
+    
+    x_der = right_fitx[0]
+    x_izq = left_fitx[0]
+    center_car = (1280*xm_per_pix/2.0)
+    center_road = ((x_der+x_izq)/2.0)
+    position = center_car-center_road
+    return average_distance, std_distance, position
+```
+
+#### 6. Result
+Once lane lines are detected and pass the sanity check, curvature is calculated and lines are shown in the original image using an inverse perspective transform.
+
+
+![alt text][image15]
+
+![alt text][image16]
 
 ---
 
 ### Pipeline (video)
+A video of the result
+![alt text][video1]
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
-
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./project_result.avi)
 
 ---
 
