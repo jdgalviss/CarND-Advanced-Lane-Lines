@@ -194,11 +194,13 @@ Here I'll talk about the approach I took, what techniques I used, what worked an
 #### Issues
 The pipeline works pretty well with the project video, however when trying to use it with the challenge videos, it can be seen right away that the parameters that worked to get the binary image don't work that well now, producing false detections that would make the lanes detected useless. It seems like some sort of adaptive thresholds for the gradient and color thresholds might be useful. The same way, filtering the lines based on their location when there are multiple detection of lane lines could be of help.
 
-In summary, the biggest problem is the robustness of the binary image generation, environments with different lighting, pavement color, shades and of course during the night would produce binary images from which it will be too hard and even impossible to extract the right lane lines.
+On the other hand, the change in pitch on the robot also causes some trouble, since the initial perspective transform was calculated with the car moving on a flat road, when bumps appear, the robot rotates around pitch, and the lane lines get a little distorted.
+
+In summary, the biggest problem is the robustness of the binary image generation, environments with different lighting, pavement color, shades and of course during the night would produce binary images from which it will be too hard and even impossible to extract the right lane lines. This was easily noted when I tried to make the harder challenge work, by tweaking some parameters I could get the result shown in this [video](./challenge_result.mp4)
 
 #### Important features.
 Perhaps the hardest part for the development of the pipeline was the election of correct thresholding parameters. 
 
 Another key factor is the sanity check, without it, certain lanes that are false detected on few frames would strongly affect the performance of the detections.
 
-Finally, by averaging the lane lines along a window of around 10 frames, the performance of the pipeline increased.
+Finally, by averaging the lane lines along a window of around 8 frames, the performance of the pipeline increased.
