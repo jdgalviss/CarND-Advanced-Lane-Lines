@@ -181,7 +181,7 @@ Once lane lines are detected and pass the sanity check, curvature is calculated 
 A video of the result
 ![alt text][video1]
 
-Here's a [link to my video result](./project_result.avi)
+Here's a [link to my video result](./project_result.mp4)
 
 ---
 
