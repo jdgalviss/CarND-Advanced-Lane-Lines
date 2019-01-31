@@ -118,7 +118,7 @@ The functions used to fit a 2nd order polynomial are in file `/project.py` betww
 ![alt text][image14]
 
 When the track is locked, it is better to simply detect lane lines around the previous polynomial:
-![alt text][image15]
+![alt text][image17]
 
 #### 5. Calculating curvature
 
