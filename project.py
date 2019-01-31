@@ -315,7 +315,7 @@ def search_around_poly(binary_warped, left_fit, right_fit, drawEnable = False):
     # HYPERPARAMETER
     # Choose the width of the margin around the previous polynomial to search
     # The quiz grader expects 100 here, but feel free to tune on your own!
-    margin = 80
+    margin = 90
 
     # Grab activated pixels
     nonzero = binary_warped.nonzero()
@@ -447,20 +447,23 @@ class Lines():
         Calculates the curvature o
         f polynomial functions in meters.
         '''
-        ym_per_pix = 30/700 # meters per pixel in y dimension
+        ym_per_pix = 40/700 # meters per pixel in y dimension
         xm_per_pix = 3.7/700 # meters per pixel in x dimension
-        # Define y-value where we want radius of curvature
-        # We'll choose the maximum y-value, corresponding to the bottom of the image
-        y_eval = np.max(ploty) * ym_per_pix
+        # get the curve points:
+        fitx = actual_fit[0]*ploty**2 + actual_fit[1]*ploty + actual_fit[2]
+        #fit curve
+        fit = np.polyfit(ploty * ym_per_pix, fitx * xm_per_pix, 2)
         #print(y_eval)
-        
+        y_eval = np.max(ploty) * ym_per_pix
+    
         ##### Implement the calculation of R_curve (radius of curvature) #####
-        curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
-        return curvature * actual_fit[0]/abs(actual_fit[0])
+        curvature = ((1 + (2*fit[0]*y_eval + fit[1])**2)**1.5) / np.absolute(2*fit[0])
+        return curvature * fit[0]/abs(fit[0])
 
     # Add a line that passed the sanity check to include it in the average
     def add_measure(self, measure, ploty):
         #Calculate radius of curvature to use the first time
+        self.ploty = ploty
         if(self.radius_of_curvature == 0):
             actual_curvature = self.measure_curvature_real(measure, ploty)
             self.radius_of_curvature = actual_curvature
@@ -495,11 +498,8 @@ def horizontal_distance(left_fit,right_fit,ploty):
     average_distance = np.average(right_fitx - left_fitx)
     std_distance = np.std(right_fitx - left_fitx)
     
-
-    x_der = np.average(right_fitx[0:int(right_fitx.shape[0]/2)])
-    x_izq = np.average(left_fitx[0:int(left_fitx.shape[0]/2)])
-    #x_der = right_fitx[0]
-    #x_izq = left_fitx[0]
+    x_der = right_fitx[right_fitx.shape[0]-1]
+    x_izq = left_fitx[left_fitx.shape[0]-1]
     center_car = (1280*xm_per_pix/2.0)
     center_road = ((x_der+x_izq)/2.0)
     position = center_car-center_road
@@ -510,16 +510,18 @@ def measure_curvature_real(actual_fit, ploty):
     Calculates the curvature o
     f polynomial functions in meters.
     '''
-    ym_per_pix = 30/700 # meters per pixel in y dimension
+    ym_per_pix = 40/700 # meters per pixel in y dimension
     xm_per_pix = 3.7/700 # meters per pixel in x dimension
-    # Define y-value where we want radius of curvature
-    # We'll choose the maximum y-value, corresponding to the bottom of the image
-    y_eval = np.max(ploty) * ym_per_pix
+    # get the curve points:
+    fitx = actual_fit[0]*ploty**2 + actual_fit[1]*ploty + actual_fit[2]
+    #fit curve
+    fit = np.polyfit(ploty * ym_per_pix, fitx * xm_per_pix, 2)
     #print(y_eval)
+    y_eval = np.max(ploty) * ym_per_pix
  
     ##### Implement the calculation of R_curve (radius of curvature) #####
-    curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
-    return curvature * actual_fit[0]/abs(actual_fit[0])
+    curvature = ((1 + (2*fit[0]*y_eval + fit[1])**2)**1.5) / np.absolute(2*fit[0])
+    return curvature * fit[0]/abs(fit[0])
 
 
 #========================================================================#
@@ -530,7 +532,7 @@ def advanced_process_image(img):
     global lane_right
     global curvature
     global car_position
-    alpha = 0.85  #exponential filter parameter
+    alpha = 0.9  #exponential filter parameter
     error = False
     print("==================================")
 
@@ -616,7 +618,7 @@ def advanced_process_image(img):
     # Add messages to result
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(result,"Radius of curvature: "+"{:.2f}".format(curvature)+"(m)",(20,70), font, 1.5,(255,255,255),2,cv2.LINE_AA)
-    if(car_position < 0):
+    if(car_position > 0):
         cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m right of center",(20,150), font, 1.5,(255,255,255),2,cv2.LINE_AA)
     else:
         cv2.putText(result,"Car is: "+"{:.2f}".format(abs(car_position))+"m left of center",(20,150), font, 1.5,(255,255,255),2,cv2.LINE_AA)
@@ -624,8 +626,8 @@ def advanced_process_image(img):
         cv2.putText(result,"Target locked",(20,270), font, 2.0,(0,255,0),4,cv2.LINE_AA)
     else:
         cv2.putText(result,"Target lost",(20,270), font, 2.0,(0,0,255),4,cv2.LINE_AA)
-    # cv2.putText(result,"left_curv:"+"{:.2f}".format(actual_left_curvature),(20,200), font, 1.0,(255,255,255),2,cv2.LINE_AA)
-    # cv2.putText(result,"right_curv:"+"{:.2f}".format(actual_right_curvature),(20,245), font, 1.0,(255,255,255),2,cv2.LINE_AA)
+    #cv2.putText(result,"left_curv:"+"{:.2f}".format(actual_left_curvature),(20,200), font, 1.0,(255,255,255),2,cv2.LINE_AA)
+    #cv2.putText(result,"right_curv:"+"{:.2f}".format(actual_right_curvature),(20,245), font, 1.0,(255,255,255),2,cv2.LINE_AA)
     # # cv2.putText(result,"car_position:"+"{:.2f}".format(car_position),(20,210), font, 2.0,(255,255,255),2,cv2.LINE_AA)
     # cv2.putText(result,"h_dist:"+"{:.2f}".format(h_distance_avg),(20,280), font, 1.5,(255,255,255),2,cv2.LINE_AA)
     # cv2.putText(result,"std_dist:"+"{:.2f}".format(h_distancd_std),(20,350), font, 1.5,(255,255,255),2,cv2.LINE_AA)
@@ -637,7 +639,7 @@ def advanced_process_image(img):
 
 ##==========================Evaluate Pipeline on project video========================##
 fourcc = cv2.VideoWriter_fourcc(*'MPEG')
-out = cv2.VideoWriter("out_2.avi", fourcc, 25.0, (1280,720))
+out = cv2.VideoWriter("out.avi", fourcc, 25.0, (1280,720))
 cap = cv2.VideoCapture('project_video.mp4')
 
 while(cap.isOpened()):
