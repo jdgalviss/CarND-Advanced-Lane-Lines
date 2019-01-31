@@ -46,7 +46,7 @@ The goals / steps of this project are the following:
 ---
 ### Camera Calibration
 
-The code for this step is contained in the 3rd and 5th cells of the jupyter notebook located in "/P2_advanced_line_detection.ipynb". The process to calibrate the image uses a chessboard pattern and starts with the definition of object points (known points on the cheese pattern in the real world given in x-y-z coordinates, where z=0 since the pattern is on a flat surface) and the image points (points found on the image, using the function: cv2.findChessboardCorners). These points are stored in numpy arrays for everyone of the images that are in the folder "/camera_cal". By matching image and object points (using the function cv2. calibrateCamera), we can get the camera matrix and the distortion parameters, which will allow us to undistort images using the "cv2.undistort" function. These parameters are then saved on a pickle file for future use.
+The code for this step is contained in the 3rd and 5th cells of the jupyter notebook located in `/P2_advanced_line_detection.ipynb`. The process to calibrate the image uses a chessboard pattern and starts with the definition of object points (known points on the cheese pattern in the real world given in x-y-z coordinates, where z=0 since the pattern is on a flat surface) and the image points (points found on the image, using the function: cv2.findChessboardCorners). These points are stored in numpy arrays for everyone of the images that are in the folder "/camera_cal". By matching image and object points (using the function cv2. calibrateCamera), we can get the camera matrix and the distortion parameters, which will allow us to undistort images using the "cv2.undistort" function. These parameters are then saved on a pickle file for future use.
 
 ![alt text][image1]
 fig1. Distorted Chessboard pattern
@@ -54,63 +54,94 @@ fig1. Distorted Chessboard pattern
 ![alt text][image2]
 fig2. Undistorted Chessboard pattern
 
-### Pipeline (single images)
-Applying camera undistort, we can go from a distorted image:
+### Pipeline
+Here I present a summary of my pipeline for lane dataction.
+#### 1. Distortion correction
+Applying camera undistort (function undistort(img, mtx, dist, None, mtx)), we can go from a distorted image (img):
 ![alt text][image5]
 to an undistorted image:
 ![alt text][image5]
-#### 1. Provide an example of a distortion-corrected image.
+by using the camera matrix (mtx) and the distortion coefficients(dist).
 
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
 
-#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+#### 2. Getting a thresholded binary image
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image (The different functions used for gradient and color thresholding are in the file `project.py` between lines 25 and 76).
 
+In order to identify which channels were more appropiate to do the thresholding, I displayed all channels for several images:
+![alt text][image7]
+
+It was pretty clear that channels R from RGB, S from HLS and V from HSV are the ones where lane lines seem to be more highlited. So now, to define which ones I was actually going to use, I performed edge detection on these channels by combining X edges with Y edges and XY edges with edge-gradient thresholding:
+![alt text][image8]
+
+and color thresholding:
+![alt text][image9]
+
+By mixing, edge and color thresholding, from these channels we can get:
+![alt text][image10]
+
+which are clearly showing the lane lines as expected. The code used to get binary thresholded images on these 3 channels can be found in the file `/project.py` between lines 82 and 171
+
+#### 3. Perspective transform
+To get the perspective transform matrix and inverse matrix, I reused some of the code from the first project in order to get straight lane lines on an image that I knew contained straight lines:
 ![alt text][image3]
 
-#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
-
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
-
-```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-```
-
-This resulted in the following source and destination points:
+The source and destination points I got are the following:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 587, 455      | 300, 100      | 
+| 230, 712      | 300, 720      |
+| 1098, 712     | 980, 720      |
+| 698, 455      | 980, 100      |
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+With these points I calculated the matrixes M and M_inv using the function `cv2.getPerspectiveTransform(src, dst)`
 
+By taking the 4 points (2 points for each line) and defining the margins, I could transform (using the code found on the fifth block of the jupyter notebook `/P2_advanced_line_detection.ipynb`) the image from its normal perspective to a bird-eye view (using function cv2.warpPerspective()):
 ![alt text][image4]
 
-#### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+After getting tha M and M_inv matrixes, I saved them in a pickle file for future use with the function .
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+Binary edges images can be then transformed to get a warped binary image like following:
+![alt text][image11]
 
-![alt text][image5]
+After trying with several images, I noticed that in some cases (shadows, change of color in the pavement), it was hard to find a proper threshold for the S channel that didn't produce extreme noise, this is why I decided to work with a combination of R and V channels. This combination produces binary warped images like following:
 
-#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+![alt text][image12]
 
-I did this in lines # through # in my code in `my_other_file.py`
+To use dome of the noise produced by shadows I decided to use the morphological operation called openning:
+![alt text][image13]
 
-#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+#### 4. Lane-line identification
+
+The functions used to fit a 2nd order polynomial are in file `/project.py` betwwen lines 178 to 408. For the first image and in cases where the track is lost (determined by a sanity check) I used the a "windows" method:
+![alt text][image13]
+
+When the track is locked, it is better to simply detect lane lines around the previous polynomial:
+![alt text][image14]
+
+#### 5. Calculating curvature
+
+I did this in lines 502 through 516 in my code in `/project.py` using the formula given in the lessons.
+```python
+
+def measure_curvature_real(actual_fit, ploty):
+    '''
+    Calculates the curvature o
+    f polynomial functions in meters.
+    '''
+    ym_per_pix = 30/700 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    # Define y-value where we want radius of curvature
+    # We'll choose the maximum y-value, corresponding to the bottom of the image
+    y_eval = np.max(ploty) * ym_per_pix
+ 
+    ##### Implement the calculation of R_curve (radius of curvature) #####
+    curvature = ((1 + (2*actual_fit[0]*y_eval + actual_fit[1])**2)**1.5) / np.absolute(2*actual_fit[0])
+    return curvature * actual_fit[0]/abs(actual_fit[0])
+```
+
+#### 6. Sanity check
 
 I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
 
