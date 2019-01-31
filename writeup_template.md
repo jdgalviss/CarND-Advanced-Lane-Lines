@@ -190,3 +190,15 @@ Here's a [link to my video result](./project_result.avi)
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+
+#### Issues
+The pipeline works pretty well with the project video, however when trying to use it with the challenge videos, it can be seen right away that the parameters that worked to get the binary image don't work that well now, producing false detections that would make the lanes detected useless. It seems like some sort of adaptive thresholds for the gradient and color thresholds might be useful. The same way, filtering the lines based on their location when there are multiple detection of lane lines could be of help.
+
+In summary, the biggest problem is the robustness of the binary image generation, environments with different lighting, pavement color, shades and of course during the night would produce binary images from which it will be too hard and even impossible to extract the right lane lines.
+
+#### Important features.
+Perhaps the hardest part for the development of the pipeline was the election of correct thresholding parameters. 
+
+Another key factor is the sanity check, without it, certain lanes that are false detected on few frames would strongly affect the performance of the detections.
+
+Finally, by averaging the lane lines along a window of around 10 frames, the performance of the pipeline increased.
