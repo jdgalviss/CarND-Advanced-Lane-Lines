@@ -400,12 +400,15 @@ def draw_area(img, left_fit, right_fit, ploty, locked):
         cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
     else:
         cv2.fillPoly(color_warp, np.int_([pts]), (0, 0, 255))
-
+    
+    #Get original image warped
+    warped = cv2.warpPerspective(img, M, (img.shape[1], img.shape[0])) 
+    combined = cv2.addWeighted(warped, 1, color_warp, 0.8, 0)
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
     newwarp = cv2.warpPerspective(color_warp, M_inv, (img.shape[1], img.shape[0])) 
     # Combine the result with the original image
     result = cv2.addWeighted(undist, 1, newwarp, 0.8, 0)
-    return color_warp, result
+    return combined, result
 
 #=====================================================================================#
 #=========== Define a class to receive the characteristics of each line detection ====#
@@ -465,7 +468,7 @@ class Lines():
         else:
             #average last 6 lines
             self.measures = np.append(self.measures, np.array([measure]), axis=0)
-            if self.measures.shape[0] > 6:
+            if self.measures.shape[0] > 4:
                 self.measures = np.delete(self.measures, (0), axis=0)
         self.best_fit = np.average(self.measures, axis=0)
 
@@ -492,8 +495,11 @@ def horizontal_distance(left_fit,right_fit,ploty):
     average_distance = np.average(right_fitx - left_fitx)
     std_distance = np.std(right_fitx - left_fitx)
     
-    x_der = right_fitx[0]
-    x_izq = left_fitx[0]
+
+    x_der = np.average(right_fitx[0:int(right_fitx.shape[0]/2)])
+    x_izq = np.average(left_fitx[0:int(left_fitx.shape[0]/2)])
+    #x_der = right_fitx[0]
+    #x_izq = left_fitx[0]
     center_car = (1280*xm_per_pix/2.0)
     center_road = ((x_der+x_izq)/2.0)
     position = center_car-center_road
